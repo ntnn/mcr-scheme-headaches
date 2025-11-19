@@ -8,4 +8,21 @@ layout:
 - go.kubebuilder.io/v4
 projectName: mcr-scheme-headaches
 repo: github.com/ntnn/mcr-scheme-headaches
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: mcr-scheme-headaches.ntnn.github.com
+  group: example
+  kind: Source
+  path: github.com/ntnn/mcr-scheme-headaches/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: mcr-scheme-headaches.ntnn.github.com
+  group: example
+  kind: Target
+  path: github.com/ntnn/mcr-scheme-headaches/api/v1alpha1
+  version: v1alpha1
 version: "3"
