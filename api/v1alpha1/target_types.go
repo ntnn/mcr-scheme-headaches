@@ -24,24 +24,12 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // TargetSpec defines the desired state of Target
-type TargetSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	// The following markers will use OpenAPI v3 schema to validate the value
-	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
-
-	// foo is an example field of Target. Edit target_types.go to remove/update
-	// +optional
-	Foo *string `json:"foo,omitempty"`
-}
+type TargetSpec struct{}
 
 // TargetStatus defines the observed state of Target.
 type TargetStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// For Kubernetes API conventions, see:
-	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
+	Message        string   `json:"message,omitempty"`
+	AdditionalInfo []string `json:"additionalInfo,omitempty"`
 
 	// conditions represent the current state of the Target resource.
 	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
