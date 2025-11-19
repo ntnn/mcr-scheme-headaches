@@ -1,135 +1,97 @@
 # mcr-scheme-headaches
-// TODO(user): Add simple overview of use/purpose
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+Create two kind clusters:
 
-## Getting Started
+    kind create cluster --name mcr-scheme-headaches-source
 
-### Prerequisites
-- go version v1.24.6+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+    kind create cluster --name mcr-scheme-headaches-target
 
-### To Deploy on the cluster
-**Build and push your image to the location specified by `IMG`:**
+Export the kubeconfigs:
 
-```sh
-make docker-build docker-push IMG=<some-registry>/mcr-scheme-headaches:tag
+    kind export kubeconfig --name mcr-scheme-headaches-source --kubeconfig source.kubeconfig
+
+    kind export kubeconfig --name mcr-scheme-headaches-target --kubeconfig target.kubeconfig
+
+Install the Source CRD in the source cluster:
+
+    kubectl --kubeconfig source.kubeconfig apply -f ./config/crd/bases/example.mcr-scheme-headaches.ntnn.github.com_sources.yaml
+
+And the Target CRD in the target cluster:
+
+    kubectl --kubeconfig target.kubeconfig apply -f ./config/crd/bases/example.mcr-scheme-headaches.ntnn.github.com_targets.yaml
+
+And start the manager:
+
+    go run ./cmd/manager --source-kubeconfig source.kubeconfig --target-kubeconfig target.kubeconfig
+
+We'd expect the manager to engage both clusters and create a Target CR
+in the target cluster based on the Source CR in the source cluster.
+
+However currently mcr does not support reconciling against multiple
+clusters that have differing schemes and fails to engage the
+`cluster.Cluster`:
+
+```
+2025-11-19T14:21:32+01:00       ERROR   clusters-cluster-provider       error adding cluster    {"name": "target", "error": "failed to engage cluster \"target\": failed to watch for cluster \"target\": no kind is registered for the type v1alpha1.Source in scheme \"pkg/runtime/scheme.go:110\""}
+sigs.k8s.io/multicluster-runtime/providers/clusters.(*Provider).Start
+        /Users/I567861/SAPDevelop/golang/pkg/mod/sigs.k8s.io/multicluster-runtime@v0.22.0-beta.0.0.20251119125600-21deeffb172b/providers/clusters/provider.go:89
+sigs.k8s.io/multicluster-runtime/pkg/manager.(*mcManager).Start.func1
+        /Users/I567861/SAPDevelop/golang/pkg/mod/sigs.k8s.io/multicluster-runtime@v0.22.0-beta.0.0.20251119125600-21deeffb172b/pkg/manager/manager.go:256
+sigs.k8s.io/controller-runtime/pkg/manager.RunnableFunc.Start
+        /Users/I567861/SAPDevelop/golang/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.4/pkg/manager/manager.go:312
+sigs.k8s.io/controller-runtime/pkg/manager.(*runnableGroup).reconcile.func1
+        /Users/I567861/SAPDevelop/golang/pkg/mod/sigs.k8s.io/controller-runtime@v0.22.4/pkg/manager/runnable_group.go:260
 ```
 
-**NOTE:** This image ought to be published in the personal registry you specified.
-And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don’t work.
+So when creating the Source CR in the source cluster, the manager
+doesn't reconcile it:
 
-**Install the CRDs into the cluster:**
+    kubectl --kubeconfig source.kubeconfig apply -f ./config/samples/example_v1alpha1_source.yaml
 
-```sh
-make install
+No Target CR is created in the target cluster:
+
+    kubectl --kubeconfig target.kubeconfig get targets.example.mcr-scheme-headaches.ntnn.github.com
+
+And the conditions in the source cluster are not updated:
+
+    kubectl --kubeconfig source.kubeconfig get sources.example.mcr-scheme-headaches.ntnn.github.com source-sample -o yaml
+
+## Solution
+
+### ForCluster
+
+One option would be to allow filtering which clusters a reconciler
+enganges, e.g. by adding a `ForCluster` method to the builder:
+
+```go
+	if err := mcbuilder.ControllerManagedBy(mgr).
+			Named("source-controller").
+			ForCluster(sourceClusterFilter).
+			For(&headachev1alpha1.Source{}).
+			Complete(sr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Source")
+		os.Exit(1)
+	}
 ```
 
-**Deploy the Manager to the cluster with the image specified by `IMG`:**
+The `ForCluster` could take a function like this:
 
-```sh
-make deploy IMG=<some-registry>/mcr-scheme-headaches:tag
+```go
+type ForClusterFilter func(context.Context, cluster.Cluster) bool
+
+func (mcbuilder *Builder) ForCluster(filter ForClusterFilter) *Builder {
+    // ...
+}
 ```
 
-> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin.
+### ForProvider
 
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
+`ForProvider` could work like `ForCluster`, but take a provider
+reference. If the provider has the cluster the reconciler should engage,
+it would engage it.
 
-```sh
-kubectl apply -k config/samples/
+```go
+func (mcbuilder *Builder) ForProvider(provider multicluster.Provider) *Builder {
+    // ...
+}
 ```
-
->**NOTE**: Ensure that the samples has default values to test it out.
-
-### To Uninstall
-**Delete the instances (CRs) from the cluster:**
-
-```sh
-kubectl delete -k config/samples/
-```
-
-**Delete the APIs(CRDs) from the cluster:**
-
-```sh
-make uninstall
-```
-
-**UnDeploy the controller from the cluster:**
-
-```sh
-make undeploy
-```
-
-## Project Distribution
-
-Following the options to release and provide this solution to the users.
-
-### By providing a bundle with all YAML files
-
-1. Build the installer for the image built and published in the registry:
-
-```sh
-make build-installer IMG=<some-registry>/mcr-scheme-headaches:tag
-```
-
-**NOTE:** The makefile target mentioned above generates an 'install.yaml'
-file in the dist directory. This file contains all the resources built
-with Kustomize, which are necessary to install this project without its
-dependencies.
-
-2. Using the installer
-
-Users can just run 'kubectl apply -f <URL for YAML BUNDLE>' to install
-the project, i.e.:
-
-```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/mcr-scheme-headaches/<tag or branch>/dist/install.yaml
-```
-
-### By providing a Helm Chart
-
-1. Build the chart using the optional helm plugin
-
-```sh
-kubebuilder edit --plugins=helm/v2-alpha
-```
-
-2. See that a chart was generated under 'dist/chart', and users
-can obtain this solution from there.
-
-**NOTE:** If you change the project, you need to update the Helm Chart
-using the same command above to sync the latest changes. Furthermore,
-if you create webhooks, you need to use the above command with
-the '--force' flag and manually ensure that any custom configuration
-previously added to 'dist/chart/values.yaml' or 'dist/chart/manager/manager.yaml'
-is manually re-applied afterwards.
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-**NOTE:** Run `make help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
-
-## License
-
-Copyright 2025.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
