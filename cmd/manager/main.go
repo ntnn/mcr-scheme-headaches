@@ -107,6 +107,20 @@ func main() {
 		GetCluster: mgr.GetCluster,
 	}
 
+	// sourceObj := &unstructured.Unstructured{}
+	// sourceObj.SetGroupVersionKind(schema.GroupVersionKind{
+	// 	Group:   "example.mcr-scheme-headaches.ntnn.github.com",
+	// 	Kind:    "Source",
+	// 	Version: "v1alpha1",
+	// })
+	// if err := mcbuilder.ControllerManagedBy(mgr).
+	// 	Named("source-controller").
+	// 	For(sourceObj).
+	// 	Complete(sr); err != nil {
+	// 	setupLog.Error(err, "unable to create controller", "controller", "Source")
+	// 	os.Exit(1)
+	// }
+
 	if err := mcbuilder.ControllerManagedBy(mgr).
 		Named("source-controller").
 		For(&headachev1alpha1.Source{}).
