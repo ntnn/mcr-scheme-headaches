@@ -124,6 +124,7 @@ func main() {
 	if err := mcbuilder.ControllerManagedBy(mgr).
 		Named("source-controller").
 		For(&headachev1alpha1.Source{}).
+		WithEventFilter(&ClusterFilter{}).
 		Complete(sr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Source")
 		os.Exit(1)
@@ -137,6 +138,7 @@ func main() {
 	if err := mcbuilder.ControllerManagedBy(mgr).
 		Named("target-controller").
 		For(&headachev1alpha1.Target{}).
+		WithEventFilter(&ClusterFilter{}).
 		Complete(tr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Target")
 		os.Exit(1)
