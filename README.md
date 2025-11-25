@@ -55,3 +55,9 @@ No Target CR is created in the target cluster:
 And the conditions in the source cluster are not updated:
 
     kubectl --kubeconfig source.kubeconfig get sources.example.mcr-scheme-headaches.ntnn.github.com source-sample -o yaml
+
+## Fork
+
+Run the manager using the forked mcr:
+
+    ( cd ./cmd/forked && go run . )
