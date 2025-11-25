@@ -1,0 +1,9 @@
+apiVersion: example.mcr-scheme-headaches.ntnn.github.com/v1alpha1
+kind: Source
+metadata:
+  labels:
+    app.kubernetes.io/name: mcr-scheme-headaches
+    app.kubernetes.io/managed-by: kustomize
+  name: source-sample
+spec:
+  message: hello, world!
