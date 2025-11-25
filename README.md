@@ -28,8 +28,11 @@ We'd expect the manager to engage both clusters and create a Target CR
 in the target cluster based on the Source CR in the source cluster.
 
 However currently mcr does not support reconciling against multiple
-clusters that have differing schemes and fails to engage the
-`cluster.Cluster`:
+clusters that have differing schemes as all controllers are engaged
+with all clusters. If a cluster does not have a CRD installed this
+engagement fails.
+
+The manager then logs an error like this:
 
 ```
 2025-11-19T14:21:32+01:00       ERROR   clusters-cluster-provider       error adding cluster    {"name": "target", "error": "failed to engage cluster \"target\": failed to watch for cluster \"target\": no kind is registered for the type v1alpha1.Source in scheme \"pkg/runtime/scheme.go:110\""}
@@ -61,3 +64,7 @@ And the conditions in the source cluster are not updated:
 Run the manager using the forked mcr:
 
     ( cd ./cmd/forked && go run . )
+
+The fork allows a controller to filter which clusters it engages,
+allowing a single manager to work with multiple clusters that have
+differing schemes.
