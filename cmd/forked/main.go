@@ -110,7 +110,7 @@ func main() {
 
 	if err := mcbuilder.ControllerManagedBy(mgr).
 		Named("source-controller").
-		For(&headachev1alpha1.Source{}, mcbuilder.WithEngageFilterClusters(
+		For(&headachev1alpha1.Source{}, mcbuilder.WithClusterFilter(
 			func(clusterName string, cluster cluster.Cluster) bool {
 				return clusterName == "source"
 			},
@@ -127,7 +127,7 @@ func main() {
 
 	if err := mcbuilder.ControllerManagedBy(mgr).
 		Named("target-controller").
-		For(&headachev1alpha1.Target{}, mcbuilder.WithEngageFilterClusters(
+		For(&headachev1alpha1.Target{}, mcbuilder.WithClusterFilter(
 			func(clusterName string, cluster cluster.Cluster) bool {
 				return clusterName == "target"
 			},

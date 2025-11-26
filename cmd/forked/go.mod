@@ -6,7 +6,7 @@ replace github.com/ntnn/mcr-scheme-headaches => ../..
 
 // replace sigs.k8s.io/multicluster-runtime => ../../../multicluster-runtime
 
-replace sigs.k8s.io/multicluster-runtime => github.com/ntnn/multicluster-runtime v0.22.0-beta.0.0.20251125222900-70aefe5d9595
+replace sigs.k8s.io/multicluster-runtime => github.com/ntnn/multicluster-runtime v0.22.0-beta.0.0.20251126063424-744aceb4072b
 
 require (
 	github.com/ntnn/mcr-scheme-headaches v0.0.0-00010101000000-000000000000
