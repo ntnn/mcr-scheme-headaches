@@ -13,7 +13,7 @@ require (
 	k8s.io/apimachinery v0.34.2
 	k8s.io/client-go v0.34.2
 	sigs.k8s.io/controller-runtime v0.22.4
-	sigs.k8s.io/multicluster-runtime v0.22.0-beta.0.0.20251119125600-21deeffb172b
+	sigs.k8s.io/multicluster-runtime v0.23.1
 )
 
 require (
