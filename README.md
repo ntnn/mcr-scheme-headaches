@@ -1,5 +1,8 @@
 # mcr-scheme-headaches
 
+> [!NOTE]
+> All this is fixed by filtering clusters now: https://pkg.go.dev/sigs.k8s.io/multicluster-runtime@v0.23.1/pkg/builder#WithClusterFilter
+ 
 Create two kind clusters:
 
     kind create cluster --name mcr-scheme-headaches-source
